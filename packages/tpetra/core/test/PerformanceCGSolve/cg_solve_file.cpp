@@ -25,6 +25,8 @@
 #include "Teuchos_TimeMonitor.hpp"
 #include "Teuchos_StackedTimer.hpp"
 
+#include <caliper/cali.h>
+
 #include <algorithm>
 #include <functional>
 
@@ -266,6 +268,7 @@ int run()
 }
 
 int main(int argc, char *argv[]) {
+  CALI_MARK_BEGIN("Main");
   using namespace CGParams;
   using default_exec = Tpetra::Details::DefaultTypes::execution_space;
   Teuchos::oblackholestream blackhole;
@@ -413,5 +416,6 @@ int main(int argc, char *argv[]) {
       std::cerr << "Error: no node type was enabled. CG was not run.\n";
   }
   Kokkos::finalize ();
+  CALI_MARK_END("Main");
   return 0;
 }

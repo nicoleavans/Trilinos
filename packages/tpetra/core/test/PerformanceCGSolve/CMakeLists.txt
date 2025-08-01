@@ -7,12 +7,16 @@ IF (Tpetra_INST_DOUBLE)
     MESSAGE(STATUS "Tpetra: Performance-CGSolve test ENABLED")
 
     # This test makes sense only for Scalar == double
+    set(CALIPER_ROOT "$ENV{HOME}/install/caliper")
+
+    include_directories("${CALIPER_ROOT}/include")
+    link_directories("${CALIPER_ROOT}/lib64")
+
     TRIBITS_ADD_EXECUTABLE( Performance-CGSolve
                             SOURCES cg_solve_file.cpp
                             COMM mpi
                             CATEGORIES BASIC PERFORMANCE
     )
-
 
     set(COUNTER 1)
     set(MAX_COUNT 11)

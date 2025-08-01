@@ -21,6 +21,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ${Tpetra_ENABLE_DEPRECATED_CODE_DEFAULT}
 )
 
+IF(TPL_ENABLE_Caliper)
+  MESSAGE(STATUS "Tpetra: Caliper TPL is enabled.")
+  SET(CALIPER_ROOT "$ENV{HOME}/install/caliper")
+  INCLUDE_DIRECTORIES(${CALIPER_ROOT}/include)
+  LINK_DIRECTORIES(${CALIPER_ROOT}/lib64)
+ENDIF()
+
 # Supported Kokkos version in Trilinos
 # NOTE: When we snapshot Kokkos into Trilinos, we have to update these numbers to maintain
 # compatibility with external Kokkos
