@@ -4357,11 +4357,11 @@ void MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::copyAndPermute(
       // pay to do the all-reduce from device to host.
       Kokkos::fence("MultiVector::reduce"); // for UVM getLocalViewDevice is UVM which can be read as host by allReduceView, so we must not read until device is fenced
       auto X_lcl = this->getLocalViewDevice(Access::ReadWrite);
-      allReduceView (X_lcl, X_lcl, *comm);
+      //allReduceView (X_lcl, X_lcl, *comm); //commented out
     }
     else {
       auto X_lcl = this->getLocalViewHost(Access::ReadWrite);
-      allReduceView (X_lcl, X_lcl, *comm);
+      //allReduceView (X_lcl, X_lcl, *comm); //commented out
     }
   }
 

@@ -13,6 +13,7 @@
 #include "Tpetra_Details_Behavior.hpp"
 #include "Tpetra_Details_isInterComm.hpp"
 #include "Kokkos_Core.hpp"
+#include <KokkosComm/KokkosComm.hpp>
 #include "Teuchos_CommHelpers.hpp"
 #include "Tpetra_Details_temporaryViewUtils.hpp"
 #include <limits>
@@ -36,6 +37,11 @@ allReduceRawContiguous (const OutputViewType& output,
   using ValueType = typename InputViewType::non_const_value_type;
   size_t count = input.span();
   TEUCHOS_ASSERT( count <= size_t (INT_MAX) );
+
+  const Teuchos::MpiComm<int>* tmpiComm = dynamic_cast<const Teuchos::MpiComm<int>* >(&comm);
+  Teuchos::RCP<const Teuchos::OpaqueWrapper<MPI_Comm>> oMpiComm = tmpiComm->getRawMpiComm();
+  MPI_Comm mpiComm = (*oMpiComm)();
+
   if(isInterComm(comm) && input.data() == output.data())
   {
     //Can't do in-place collective on an intercomm,
@@ -46,12 +52,16 @@ allReduceRawContiguous (const OutputViewType& output,
     // DEEP_COPY REVIEW - This could be either DEVICE-TO-DEVICE or HOST-TO-HOST
     // Either way, MPI is called right afterwards, meaning we'd need a sync on device
     Kokkos::deep_copy(tempInput, input);
-    reduceAll<int, ValueType> (comm, REDUCE_SUM, static_cast<int> (count),
-        tempInput.data(), output.data());
+    //reduceAll<int, ValueType>(comm, REDUCE_SUM, static_cast<int>(count),
+                              //tempInput.data(), output.data());
+
+    KokkosComm::mpi::allreduce(Kokkos::DefaultExecutionSpace(), tempInput, output, MPI_SUM, mpiComm);
   }
   else
-    reduceAll<int, ValueType> (comm, REDUCE_SUM, static_cast<int> (count),
-        input.data(), output.data());
+    //reduceAll<int, ValueType> (comm, REDUCE_SUM, static_cast<int> (count),
+        //input.data(), output.data()); 
+
+    KokkosComm::mpi::allreduce(Kokkos::DefaultExecutionSpace(), input, output, MPI_SUM, mpiComm);
 }
 
 /// \brief All-reduce from input Kokkos::View to output Kokkos::View.
@@ -83,13 +93,10 @@ allReduceView (const OutputViewType& output,
   //if one or both is already in the correct layout, toLayout returns the same view
   auto inputContig = TempView::toLayout<InputViewType, Layout>(input);
   auto outputContig = TempView::toLayout<InputViewType, Layout>(output);
-  if(Tpetra::Details::Behavior::assumeMpiIsGPUAware())
-  {
+  if(Tpetra::Details::Behavior::assumeMpiIsGPUAware()) {
     allReduceRawContiguous(outputContig, inputContig, comm);
-
-  }
-  else
-  {
+  
+  } else {
     auto inputMPI = TempView::toMPISafe<decltype(inputContig), false>(inputContig);
     auto outputMPI = TempView::toMPISafe<decltype(outputContig), false>(outputContig);
     allReduceRawContiguous(outputMPI, inputMPI, comm);
@@ -104,3 +111,4 @@ allReduceView (const OutputViewType& output,
 } // namespace Tpetra
 
 #endif // TPETRA_DETAILS_ALLREDUCEVIEW_HPP
+
